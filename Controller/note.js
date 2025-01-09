@@ -1,7 +1,8 @@
 const Note = require("../model/Note");
 const { StatusCodes } = require("http-status-codes");
+const { body, validationResult } = require("express-validator");
 
-const addNote = async (req, res) => {
+const addNote = async (req, res, next) => {
   try {
     const { title, content } = req.body;
     const note = new Note({ title, content });
@@ -9,21 +10,16 @@ const addNote = async (req, res) => {
     res.status(StatusCodes.CREATED).json({
       success: true,
       statusCode: StatusCodes.CREATED,
-      message: "note added successfully",
+      message: "Note(s) added successfully",
       data: note,
     });
   } catch (error) {
     console.log(error.message); //for developers
-    res.status(StatusCodes.BAD_REQUEST).json({
-      success: false,
-      statusCode: StatusCodes.BAD_REQUEST,
-      message: error.message,
-      data: {},
-    });
+    next(error);
   }
 };
 
-const getNotes = async (req, res) => {
+const getNotes = async (req, res, next) => {
   try {
     const notes = await Note.find();
     res.status(StatusCodes.OK).json({
@@ -33,79 +29,61 @@ const getNotes = async (req, res) => {
       data: notes,
     });
   } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({
-      success: false,
-      statusCode: StatusCodes.BAD_REQUEST,
-      message: error.message,
-      data: {},
-    });
+    next(error);
   }
 };
-const getNote = async (req, res) => {
+const getNote = async (req, res, next) => {
   const { id } = req.params;
-
   try {
     const note = await Note.findById(id);
     if (!note) {
       return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        statusCode: StatusCodes.NOT_FOUND,
-        message: "no note found",
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: "Note not present",
         data: {},
       });
     }
-
     res.status(StatusCodes.OK).json({
       success: true,
       statusCode: StatusCodes.OK,
       message: "",
-      data: {},
+      data: note,
     });
   } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({
-      success: false,
-      statusCode: StatusCodes.BAD_REQUEST,
-      message: error.message,
-      data: {},
-    });
+    next(error);
   }
 };
 
-const editNote = async (req, res) => {
+const editNote = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { title, content } = req.body;
     const updatedNote = await Note.findByIdAndUpdate(
       id,
       { title, content },
-      { new: true } // returns updated note
+      { new: true }
     );
     if (!updatedNote) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         statusCode: StatusCodes.NOT_FOUND,
-        message: "note not found",
+        message: "Cannot find note with the ID ${id}",
         data: {},
       });
     }
-
     res.status(StatusCodes.OK).json({
       success: true,
       statusCode: StatusCodes.OK,
-      message: error.message,
+      message: "Note updated Successfully",
       data: updatedNote,
     });
   } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({
-      success: false,
-      statusCode: StatusCodes.BAD_REQUEST,
-      message: error.message,
-      data: {},
-    });
+    next(error);
   }
 };
 
-const deleteNote = async (req, res) => {
+const deleteNote = async (req, res, next) => {
   try {
     const { id } = req.params;
     const note = await Note.findByIdAndDelete(id);
@@ -113,23 +91,19 @@ const deleteNote = async (req, res) => {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         statusCode: StatusCodes.NOT_FOUND,
-        message: "no note found",
+        message: "Note not present",
         data: {},
       });
     }
     res.status(StatusCodes.OK).json({
       success: true,
       statusCode: StatusCodes.OK,
-      message: "note deleted successfully",
+      message: "Note deleted Successfully",
       data: {},
     });
   } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({
-      success: false,
-      statusCode: StatusCodes.BAD_REQUEST,
-      message: error.message,
-      data: {},
-    });
+    next(error);
   }
 };
+
 module.exports = { addNote, getNotes, getNote, editNote, deleteNote };
